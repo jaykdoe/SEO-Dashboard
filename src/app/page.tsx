@@ -1905,29 +1905,30 @@ export default function Dashboard() {
               
               {/* Query Insights Display */}
               {showInsights.queries && insights.queries && (
-                <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200">
+                <div className="mt-6 bg-gradient-to-r from-green-600/5 to-emerald-600/5 p-6 rounded-lg border border-green-200">
                   <div className="flex justify-between items-start mb-4">
-                    <h4 className="text-lg font-medium text-green-900">AI Analysis</h4>
+                    <h4 className="text-lg font-medium text-emerald-600">AI Analysis</h4>
                     <Button
                       onClick={() => setShowInsights({...showInsights, queries: false})}
                       variant="ghost"
                       size="icon"
-                      className="text-green-600 hover:text-green-800"
+                      className="text-emerald-600 hover:text-emerald-800"
                     >
                       ×
                     </Button>
                   </div>
-                  <div className="prose prose-green max-w-none text-green-800">
+                  <div className="prose prose-emerald max-w-none text-emerald-500">
                     <ReactMarkdown
                       components={{
-                        h1: ({children}) => <h1 className="text-xl font-bold mb-3 text-green-900">{children}</h1>,
-                        h2: ({children}) => <h2 className="text-lg font-semibold mb-2 text-green-900">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-base font-medium mb-2 text-green-800">{children}</h3>,
-                        p: ({children}) => <p className="mb-3 text-green-800">{children}</p>,
-                        ul: ({children}) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-                        ol: ({children}) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-                        li: ({children}) => <li className="text-green-800">{children}</li>,
-                        strong: ({children}) => <strong className="font-semibold text-green-900">{children}</strong>,
+                        h1: ({children}) => <h1 className="text-2xl font-bold mb-3 text-emerald-700">{children}</h1>,
+                        h2: ({children}) => <h2 className="text-xl font-semibold mb-2 text-emerald-700">{children}</h2>,
+                        h3: ({children}) => <h3 className="text-lg font-bold mb-2 mt-3 text-emerald-700">{children}</h3>,
+                        h4: ({children}) => <h4 className="text-base font-bold mb-2 mt-3 text-emerald-700">{children}</h4>,
+                        p: ({children}) => <p className="text-xs mb-3 text-emerald-500">{children}</p>,
+                        ul: ({children}) => <ul className="text-xs ml-6 list-disc list-inside mb-6 space-y-1">{children}</ul>,
+                        ol: ({children}) => <ol className="text-xs ml-6 list-decimal list-inside mb-6 space-y-1">{children}</ol>,
+                        li: ({children}) => <li className="text-xs ml-3 mt-1.5 text-emerald-500">{children}</li>,
+                        strong: ({children}) => <strong className="font-semibold text-emerald-500">{children}</strong>,
                         em: ({children}) => <em className="italic">{children}</em>,
                       }}
                     >
