@@ -352,6 +352,7 @@ export default function TrendsAnalysisPage() {
       return d >= start && d <= end;
     });
 
+    setInsights('');
     try {
       const resp = await fetch('http://localhost:5001/api/trends/insights', {
         method: 'POST',
@@ -366,9 +367,27 @@ export default function TrendsAnalysisPage() {
           algoUpdatesInRange,
         }),
       });
-      const data = await resp.json();
-      if (!resp.ok) { setInsights(`Error: ${data.error}`); return; }
-      setInsights(data.insights);
+      if (!resp.ok) {
+        const data = await resp.json();
+        setInsights(`Error: ${data.error}`);
+        return;
+      }
+      
+      const reader = resp.body?.getReader();
+      const decoder = new TextDecoder();
+      if (reader) {
+        let done = false;
+        let accumulated = '';
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            const chunkValue = decoder.decode(value);
+            accumulated += chunkValue;
+            setInsights(accumulated);
+          }
+        }
+      }
     } catch (e: any) {
       setInsights(`Error: ${e.message}`);
     } finally {

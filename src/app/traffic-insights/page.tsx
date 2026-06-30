@@ -896,10 +896,10 @@ export default function TrafficInsightsPage() {
 
         {/* Empty State */}
         {!winnersLosersData && !winnersLosersLoading && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
+          <div className="bg-blue-500/50 rounded-lg shadow p-12 text-center">
             <FontAwesomeIcon icon={faTrophy} className="text-gray-400 text-6xl mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Analysis Yet</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-xl font-semibold text-blue-400 mb-2">No Analysis Yet</h3>
+            <p className="text-blue-300 mb-6">
               Select a site and date range above, then click "Calculate" to see winners and losers.
             </p>
           </div>

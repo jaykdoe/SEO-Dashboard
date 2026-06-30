@@ -1538,6 +1538,10 @@ export default function Dashboard() {
 
     setInsightsLoading({...insightsLoading, daily: true});
     
+    // Clear and open insights panel immediately
+    setInsights(prev => ({ ...prev, daily: '' }));
+    setShowInsights(prev => ({ ...prev, daily: true }));
+    
     try {
       const response = await fetch('http://localhost:5001/api/insights/daily', {
         method: 'POST',
@@ -1550,17 +1554,33 @@ export default function Dashboard() {
         })
       });
 
-      const result = await response.json();
-      
-      if (result.error) {
+      if (!response.ok) {
+        const result = await response.json();
         alert('Error getting insights: ' + result.error);
-      } else {
-        setInsights({...insights, daily: result.insights});
-        setShowInsights({...showInsights, daily: true});
+        setShowInsights(prev => ({ ...prev, daily: false }));
+        return;
+      }
+      
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (reader) {
+        let done = false;
+        let accumulated = '';
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            const chunkValue = decoder.decode(value);
+            accumulated += chunkValue;
+            setInsights(prev => ({ ...prev, daily: accumulated }));
+          }
+        }
       }
     } catch (error) {
       console.error('Error getting daily insights:', error);
       alert('Failed to get insights. Make sure the backend is running.');
+      setShowInsights(prev => ({ ...prev, daily: false }));
     } finally {
       setInsightsLoading({...insightsLoading, daily: false});
     }
@@ -1578,6 +1598,10 @@ export default function Dashboard() {
 
     setInsightsLoading({...insightsLoading, queries: true});
     
+    // Clear and open insights panel immediately
+    setInsights(prev => ({ ...prev, queries: '' }));
+    setShowInsights(prev => ({ ...prev, queries: true }));
+    
     try {
       const response = await fetch('http://localhost:5001/api/insights/queries', {
         method: 'POST',
@@ -1590,17 +1614,33 @@ export default function Dashboard() {
         })
       });
 
-      const result = await response.json();
-      
-      if (result.error) {
+      if (!response.ok) {
+        const result = await response.json();
         alert('Error getting insights: ' + result.error);
-      } else {
-        setInsights({...insights, queries: result.insights});
-        setShowInsights({...showInsights, queries: true});
+        setShowInsights(prev => ({ ...prev, queries: false }));
+        return;
+      }
+      
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (reader) {
+        let done = false;
+        let accumulated = '';
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            const chunkValue = decoder.decode(value);
+            accumulated += chunkValue;
+            setInsights(prev => ({ ...prev, queries: accumulated }));
+          }
+        }
       }
     } catch (error) {
       console.error('Error getting query insights:', error);
       alert('Failed to get insights. Make sure the backend is running.');
+      setShowInsights(prev => ({ ...prev, queries: false }));
     } finally {
       setInsightsLoading({...insightsLoading, queries: false});
     }
@@ -1978,23 +2018,23 @@ export default function Dashboard() {
                       onClick={() => setShowInsights({...showInsights, queries: false})}
                       variant="ghost"
                       size="icon"
-                      className="text-emerald-600 hover:text-emerald-800"
+                      className="text-emerald-600 hover:text-emerald-700"
                     >
                       ×
                     </Button>
                   </div>
-                  <div className="prose prose-emerald max-w-none text-emerald-500">
+                  <div className="prose prose-emerald max-w-none text-emerald-700">
                     <ReactMarkdown
                       components={{
-                        h1: ({children}) => <h1 className="text-2xl font-bold mb-3 text-emerald-700">{children}</h1>,
-                        h2: ({children}) => <h2 className="text-xl font-semibold mb-2 text-emerald-700">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-lg font-bold mb-2 mt-3 text-emerald-700">{children}</h3>,
-                        h4: ({children}) => <h4 className="text-base font-bold mb-2 mt-3 text-emerald-700">{children}</h4>,
-                        p: ({children}) => <p className="text-xs mb-3 text-emerald-500">{children}</p>,
+                        h1: ({children}) => <h1 className="text-2xl font-bold mb-3 text-emerald-500">{children}</h1>,
+                        h2: ({children}) => <h2 className="text-xl font-semibold mb-2 text-emerald-500">{children}</h2>,
+                        h3: ({children}) => <h3 className="text-lg font-bold mb-2 mt-3 text-emerald-500">{children}</h3>,
+                        h4: ({children}) => <h4 className="text-base font-bold mb-2 mt-3 text-emerald-500">{children}</h4>,
+                        p: ({children}) => <p className="text-xs mb-3 text-emerald-700">{children}</p>,
                         ul: ({children}) => <ul className="text-xs ml-6 list-disc list-inside mb-6 space-y-1">{children}</ul>,
                         ol: ({children}) => <ol className="text-xs ml-6 list-decimal list-inside mb-6 space-y-1">{children}</ol>,
-                        li: ({children}) => <li className="text-xs ml-3 mt-1.5 text-emerald-500">{children}</li>,
-                        strong: ({children}) => <strong className="font-semibold text-emerald-500">{children}</strong>,
+                        li: ({children}) => <li className="text-xs ml-3 mt-1.5 text-emerald-700">{children}</li>,
+                        strong: ({children}) => <strong className="font-semibold text-emerald-700">{children}</strong>,
                         em: ({children}) => <em className="italic">{children}</em>,
                       }}
                     >

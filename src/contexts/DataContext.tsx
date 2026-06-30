@@ -114,17 +114,17 @@ interface DataContextType {
     daily: string;
     queries: string;
   };
-  setInsights: (insights: { daily: string; queries: string }) => void;
+  setInsights: React.Dispatch<React.SetStateAction<{ daily: string; queries: string }>>;
   showInsights: {
     daily: boolean;
     queries: boolean;
   };
-  setShowInsights: (show: { daily: boolean; queries: boolean }) => void;
+  setShowInsights: React.Dispatch<React.SetStateAction<{ daily: boolean; queries: boolean }>>;
   insightsLoading: {
     daily: boolean;
     queries: boolean;
   };
-  setInsightsLoading: (loading: { daily: boolean; queries: boolean }) => void;
+  setInsightsLoading: React.Dispatch<React.SetStateAction<{ daily: boolean; queries: boolean }>>;
   
   // Winners/Losers data
   winnersLosersData: WinnersLosersData | null;
