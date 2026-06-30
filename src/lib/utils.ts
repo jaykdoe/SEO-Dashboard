@@ -11,4 +11,10 @@ export function formatSiteName(site: string): string {
     return `${site.replace('sc-domain:', '')} (Domain)`;
   }
   return site.replace('https://', '').replace('http://', '');
+}
+
+export function preprocessMarkdown(text: string): string {
+  if (!text) return '';
+  // Fix GSC AI malformed single-line tables (double pipes) by replacing with proper row newlines
+  return text.replace(/\|\s*\|/g, '|\n|');
 } 

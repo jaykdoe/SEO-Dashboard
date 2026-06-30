@@ -62,7 +62,27 @@ DEFAULT_SETTINGS = {
     "topP": 0.95,
     "minP": 0.05,
     "repeatPenalty": 1.1,
-    "presencePenalty": 0.0
+    "presencePenalty": 0.0,
+    "gscInsightsSettings": {
+        "clicks": True,
+        "impressions": True,
+        "ctr": True,
+        "position": True,
+        "bestWorstDays": True,
+        "weeklySeasonal": True,
+        "anomalies": True,
+        "correlations": True,
+        "standout": True,
+        "reasons": True,
+        "qTopPerformers": True,
+        "qCtrAnalysis": True,
+        "qPositionOpportunities": True,
+        "qContentGaps": True,
+        "qBrandedAnalysis": True,
+        "qIndustryAnalysis": True,
+        "qAdditionalInsights": True,
+        "qRecommendations": True
+    }
 }
 
 # ─── Google Trends helpers ────────────────────────────────────────────────────
@@ -634,13 +654,14 @@ def get_status():
         "sites_count": len(verified_sites)
     })
 
-def get_gpt_insights(content, analysis_type="general"):
+def get_gpt_insights(content, analysis_type="general", options=None):
     """
     Generate insights from OpenAI GPT model based on the provided content.
     
     Args:
         content (str): The data to analyze
         analysis_type (str): Type of analysis - "daily" for chart data, "queries" for table data
+        options (dict): Analysis configuration options
     
     Returns:
         str: GPT insights
@@ -654,6 +675,17 @@ def get_gpt_insights(content, analysis_type="general"):
     if openai_client is None:
         return "OpenAI API key not configured. Please set your API key in Settings."
     
+    # Fallback to all options enabled if none passed
+    if not options:
+        options = {
+            "clicks": True, "impressions": True, "ctr": True, "position": True,
+            "bestWorstDays": True, "weeklySeasonal": True, "anomalies": True,
+            "correlations": True, "standout": True, "reasons": True,
+            "qTopPerformers": True, "qCtrAnalysis": True, "qPositionOpportunities": True,
+            "qContentGaps": True, "qBrandedAnalysis": True, "qIndustryAnalysis": True,
+            "qAdditionalInsights": True, "qRecommendations": True
+        }
+    
     try:
         config = load_config()
         custom_prompt = config.get('systemPrompt', '').strip()
@@ -665,55 +697,86 @@ def get_gpt_insights(content, analysis_type="general"):
         repeat_penalty = float(config.get('repeatPenalty', 1.1))
 
         if analysis_type == "daily":
+            trends_list = []
+            if options.get("clicks", True):
+                trends_list.append("- **Clicks**: Identify daily patterns, spikes, drops, and overall trends")
+            if options.get("impressions", True):
+                trends_list.append("- **Impressions**: Analyze impression trends and visibility changes")
+            if options.get("ctr", True):
+                trends_list.append("- **CTR**: Examine click-through rate patterns and correlations")
+            if options.get("position", True):
+                trends_list.append("- **Position**: Track ranking changes over time")
+                
+            obs_list = []
+            if options.get("bestWorstDays", True):
+                obs_list.append("- Identify the best and worst performing days")
+            if options.get("weeklySeasonal", True):
+                obs_list.append("- Note any weekly patterns or seasonal trends")
+            if options.get("anomalies", True):
+                obs_list.append("- Highlight significant changes or anomalies")
+            if options.get("correlations", True):
+                obs_list.append("- Highlight any correlation between clicks, impressions, and CTR")
+            if options.get("standout", True):
+                obs_list.append("- Highlight any other standout insights, unique patterns, or unexpected findings, but only if they exist")
+            if options.get("reasons", True):
+                obs_list.append("- Suggest potential reasons for performance changes")
+                
             system_content = (
                 "You are an SEO expert analyzing daily Google Search Console performance data. "
                 "Your task is to analyze daily traffic patterns and provide clear, data-driven insights. "
-                "Focus on:\n\n"
-                "**Daily Traffic Trends:**\n"
-                "- **Clicks**: Identify daily patterns, spikes, drops, and overall trends\n"
-                "- **Impressions**: Analyze impression trends and visibility changes\n"
-                "- **CTR**: Examine click-through rate patterns and correlations\n"
-                "- **Position**: Track ranking changes over time\n\n"
-                "**Key Observations:**\n"
-                "- Identify the best and worst performing days\n"
-                "- Note any weekly patterns or seasonal trends\n"
-                "- Highlight significant changes or anomalies\n"
-                "- Highlight any correlation between clicks, impressions, and CTR\n"
-                "- Highlight any other standout insights, unique patterns, or unexpected findings, but only if they exist\n"
-                "- Suggest potential reasons for performance changes\n\n"
-                "Keep insights concise and actionable. Use percentages and specific numbers when relevant. Do not manufacture findings that aren't supported by the data."
             )
+            
+            if trends_list:
+                system_content += "\n\nFocus on these Daily Traffic Trends:\n" + "\n".join(trends_list)
+            if obs_list:
+                system_content += "\n\nFocus on these Key Observations:\n" + "\n".join(obs_list)
+                
+            system_content += "\n\nKeep insights concise and actionable. Use percentages and specific numbers when relevant. Do not manufacture findings that aren't supported by the data. Format all tables using standard Markdown table syntax with proper line breaks (newlines) between rows so they render correctly in a Markdown viewer. Do not output tables on a single line."
+            
         else:  # queries analysis
+            perf_list = []
+            if options.get("qTopPerformers", True):
+                perf_list.append("- **Top Performers**: Identify highest-traffic queries and their characteristics")
+            if options.get("qCtrAnalysis", True):
+                perf_list.append("- **CTR Analysis**: Highlight queries with exceptional or poor CTR")
+            if options.get("qPositionOpportunities", True):
+                perf_list.append("- **Position Opportunities**: Find queries with good impressions but poor positions")
+            if options.get("qContentGaps", True):
+                perf_list.append("- **Content Gaps**: Identify potential content optimization opportunities")
+                
+            branded_list = []
+            if options.get("qBrandedAnalysis", True):
+                branded_list.append("- Compare branded vs. non-branded query performance\n- **Top Performers**: Identify highest-traffic branded queries and compare their characteristics\n- **CTR Analysis**: Highlight branded queries with exceptional or poor CTR\n- **Position Opportunities**: Find branded queries with good impressions but poor positions")
+                
+            industry_list = []
+            if options.get("qIndustryAnalysis", True):
+                industry_list.append("- Analyze non-branded query performance to identify relevant industries, topics, and target audiences\n- **Top Performers**: Identify highest-traffic non-branded queries and compare their characteristics\n- **CTR Analysis**: Highlight non-branded queries with exceptional or poor CTR\n- **Position Opportunities**: Find non-branded queries with good impressions but poor positions\n- **Content Gaps**: Identify potential content optimization opportunities")
+                
+            add_list = []
+            if options.get("qAdditionalInsights", True):
+                add_list.append("- Highlight any other standout insights, unique patterns, or unexpected findings, but only if they exist\n- Suggest potential reasons for performance changes")
+                
+            recs_list = []
+            if options.get("qRecommendations", True):
+                recs_list.append("- Suggest which queries to optimize for better rankings\n- Recommend content improvements based on query intent\n- Identify low-hanging fruit for quick wins\n- Highlight successful query patterns to replicate")
+                
             system_content = (
                 "You are an SEO expert analyzing Google Search Console query performance data. "
                 "Your task is to analyze search query performance and provide clear, data-driven insights. "
-                "Focus on:\n\n"
-                "**Query Performance:**\n"
-                "- **Top Performers**: Identify highest-traffic queries and their characteristics\n"
-                "- **CTR Analysis**: Highlight queries with exceptional or poor CTR\n"
-                "- **Position Opportunities**: Find queries with good impressions but poor positions\n"
-                "- **Content Gaps**: Identify potential content optimization opportunities\n\n"
-                "**Branded Analysis:**\n"
-                "- Compare branded vs. non-branded query performance\n"
-                "- **Top Performers**: Identify highest-traffic branded queries and compare their characteristics\n"
-                "- **CTR Analysis**: Highlight branded queries with exceptional or poor CTR\n"
-                "- **Position Opportunities**: Find branded queries with good impressions but poor positions\n"
-                "**Industry Analysis:**\n"
-                "- Analyze non-branded query performance to identify relevant industries, topics, and target audiences\n"
-                "- **Top Performers**: Identify highest-traffic non-branded queries and compare their characteristics\n"
-                "- **CTR Analysis**: Highlight non-branded queries with exceptional or poor CTR\n"
-                "- **Position Opportunities**: Find non-branded queries with good impressions but poor positions\n"
-                "- **Content Gaps**: Identify potential content optimization opportunities\n\n"
-                "**Additional Insights:**\n"
-                "- Highlight any other standout insights, unique patterns, or unexpected findings, but only if they exist\n"
-                "- Suggest potential reasons for performance changes\n\n"
-                "**Key Recommendations:**\n"
-                "- Suggest which queries to optimize for better rankings\n"
-                "- Recommend content improvements based on query intent\n"
-                "- Identify low-hanging fruit for quick wins\n"
-                "- Highlight successful query patterns to replicate\n\n"
-                "Keep insights concise and actionable. Focus on specific opportunities and improvements. Do not manufacture findings that aren't supported by the data."
             )
+            
+            if perf_list:
+                system_content += "\n\nFocus on these Query Performance aspects:\n" + "\n".join(perf_list)
+            if branded_list:
+                system_content += "\n\nFocus on this Branded Analysis:\n" + "\n".join(branded_list)
+            if industry_list:
+                system_content += "\n\nFocus on this Industry Analysis:\n" + "\n".join(industry_list)
+            if add_list:
+                system_content += "\n\nFocus on these Additional Insights:\n" + "\n".join(add_list)
+            if recs_list:
+                system_content += "\n\nFocus on these Key Recommendations:\n" + "\n".join(recs_list)
+                
+            system_content += "\n\nKeep insights concise and actionable. Focus on specific opportunities and improvements. Do not manufacture findings that aren't supported by the data. Format all tables using standard Markdown table syntax with proper line breaks (newlines) between rows so they render correctly in a Markdown viewer. Do not output tables on a single line."
 
         if custom_prompt:
             system_content = f"{custom_prompt}\n\n{system_content}"
@@ -753,6 +816,7 @@ def get_daily_insights():
     try:
         data = request.get_json()
         daily_data = data.get('dailyData', [])
+        options = data.get('options')
         
         if not daily_data:
             return jsonify({"error": "No daily data provided"}), 400
@@ -773,7 +837,7 @@ def get_daily_insights():
         content += f"\n\nTotal data points: {len(daily_data)} days"
         content += f"\nDate range: {daily_data[0].get('date', 'N/A')} to {daily_data[-1].get('date', 'N/A')}"
         
-        insights = get_gpt_insights(content, "daily")
+        insights = get_gpt_insights(content, "daily", options)
         
         return jsonify({"insights": insights})
         
@@ -786,6 +850,7 @@ def get_query_insights():
     try:
         data = request.get_json()
         queries = data.get('queries', [])
+        options = data.get('options')
         
         if not queries:
             return jsonify({"error": "No query data provided"}), 400
@@ -814,7 +879,7 @@ def get_query_insights():
         content += f"\nSummary: {total_clicks} total clicks, {total_impressions} total impressions"
         content += f"\nAverage CTR: {avg_ctr:.2f}%, Average Position: {avg_position:.1f}"
         
-        insights = get_gpt_insights(content, "queries")
+        insights = get_gpt_insights(content, "queries", options)
         
         return jsonify({"insights": insights})
         
@@ -845,7 +910,8 @@ def get_settings():
         "topP": config.get('topP', 0.95),
         "minP": config.get('minP', 0.05),
         "repeatPenalty": config.get('repeatPenalty', 1.1),
-        "presencePenalty": config.get('presencePenalty', 0.0)
+        "presencePenalty": config.get('presencePenalty', 0.0),
+        "gscInsightsSettings": config.get('gscInsightsSettings', {})
     })
 
 @app.route('/api/settings', methods=['POST'])
@@ -885,6 +951,9 @@ def save_settings():
         if 'lmStudioModels' in data:
             config['lmStudioModels'] = data['lmStudioModels']
             
+        if 'gscInsightsSettings' in data:
+            config['gscInsightsSettings'] = data['gscInsightsSettings']
+            
         # Expert Settings
         expert_keys = ['systemPrompt', 'contextLength', 'gpuOffload', 'temperature', 'topK', 'topP', 'minP', 'repeatPenalty', 'presencePenalty']
         for key in expert_keys:
@@ -906,7 +975,8 @@ def save_settings():
                 "aiProvider": config.get('aiProvider', 'openai'),
                 "lmStudioHost": config.get('lmStudioHost', 'http://localhost:1234'),
                 "lmStudioModel": config.get('lmStudioModel', ''),
-                "lmStudioModels": config.get('lmStudioModels', [])
+                "lmStudioModels": config.get('lmStudioModels', []),
+                "gscInsightsSettings": config.get('gscInsightsSettings', {})
             })
         else:
             return jsonify({"error": "Failed to save settings"}), 500

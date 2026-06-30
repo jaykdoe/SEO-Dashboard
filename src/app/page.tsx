@@ -4,13 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import MetricCard from '@/components/ui/MetricCard';
 import DashboardControls from '@/components/dashboard/DashboardControls';
 import { useData } from '@/contexts/DataContext';
-import { formatSiteName } from '@/lib/utils';
+import { formatSiteName, preprocessMarkdown } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faBrain, faRefresh, faExclamationTriangle, faMouse, faEye, faChartLine, faMapPin, faMagnifyingGlass, faGlobe, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faBrain, faRefresh, faExclamationTriangle, faMouse, faEye, faChartLine, faMapPin, faMagnifyingGlass, faGlobe, faTrophy, faCog } from '@fortawesome/free-solid-svg-icons';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { queryColumns, pageColumns, countryColumns, GSCDataRow } from '@/components/dashboard/columns';
+import InsightsSettingsModal, { InsightsSettings, DEFAULT_INSIGHTS_SETTINGS } from '@/components/dashboard/InsightsSettingsModal';
 
 // Annotation plugin will be loaded via script tag to match Chart.js CDN loading
 declare global {
@@ -117,6 +118,51 @@ export default function Dashboard() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [queriesPerPage, setQueriesPerPage] = useState(20);
+
+  // AI insights customization settings state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [insightsSettings, setInsightsSettings] = useState<InsightsSettings>(DEFAULT_INSIGHTS_SETTINGS);
+
+  // Load GSC insights settings from local storage or server on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('gsc_insights_settings');
+    if (stored) {
+      try {
+        setInsightsSettings(JSON.parse(stored));
+      } catch (e) {
+        console.error('Error parsing stored GSC insights settings:', e);
+      }
+    } else {
+      fetch('http://localhost:5001/api/settings')
+        .then(res => res.json())
+        .then(data => {
+          if (data.gscInsightsSettings && Object.keys(data.gscInsightsSettings).length > 0) {
+            setInsightsSettings(data.gscInsightsSettings);
+            localStorage.setItem('gsc_insights_settings', JSON.stringify(data.gscInsightsSettings));
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  const handleSaveInsightsSettings = async (newSettings: InsightsSettings) => {
+    setInsightsSettings(newSettings);
+    localStorage.setItem('gsc_insights_settings', JSON.stringify(newSettings));
+    
+    try {
+      await fetch('http://localhost:5001/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          gscInsightsSettings: newSettings
+        })
+      });
+    } catch (e) {
+      console.error('Error saving GSC insights settings to server:', e);
+    }
+  };
 
   // Sorting state
   const [sortBy, setSortBy] = useState<'clicks' | 'impressions' | 'ctr' | 'position'>('clicks');
@@ -1499,7 +1545,8 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          dailyData: data.dailyData
+          dailyData: data.dailyData,
+          options: insightsSettings
         })
       });
 
@@ -1538,7 +1585,8 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          queries: paginatedQueries
+          queries: paginatedQueries,
+          options: insightsSettings
         })
       });
 
@@ -1689,6 +1737,15 @@ export default function Dashboard() {
                 <FontAwesomeIcon icon={faBrain} />
                 <span>{insightsLoading.daily ? 'Analyzing...' : 'Get Daily Insights'}</span>
               </Button>
+              <Button
+                onClick={() => setIsSettingsOpen(true)}
+                variant="ghost"
+                size="icon"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-zinc-700 h-[38px] w-[38px] flex items-center justify-center rounded-lg"
+                title="Customize AI Insights"
+              >
+                <FontAwesomeIcon icon={faCog} />
+              </Button>
             </div>
           </div>
 
@@ -1724,7 +1781,7 @@ export default function Dashboard() {
                     em: ({children}) => <em className="italic">{children}</em>,
                   }}
                 >
-                  {insights.daily}
+                  {preprocessMarkdown(insights.daily)}
                 </ReactMarkdown>
               </div>
             </div>
@@ -1889,6 +1946,15 @@ export default function Dashboard() {
                     <FontAwesomeIcon icon={faBrain} />
                     <span>{insightsLoading.queries ? 'Analyzing...' : 'Get Insights'}</span>
                   </Button>
+                  <Button
+                    onClick={() => setIsSettingsOpen(true)}
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-zinc-700 h-[32px] w-[32px] flex items-center justify-center rounded-lg font-medium"
+                    title="Customize AI Insights"
+                  >
+                    <FontAwesomeIcon icon={faCog} />
+                  </Button>
                 </div>
               </div>
               
@@ -1932,7 +1998,7 @@ export default function Dashboard() {
                         em: ({children}) => <em className="italic">{children}</em>,
                       }}
                     >
-                      {insights.queries}
+                      {preprocessMarkdown(insights.queries)}
                     </ReactMarkdown>
                   </div>
                 </div>
@@ -1991,6 +2057,14 @@ export default function Dashboard() {
           </Button>
         </div>
       )}
+
+      {/* AI Insights Customizer Drawer */}
+      <InsightsSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        currentSettings={insightsSettings}
+        onSave={handleSaveInsightsSettings}
+      />
     </div>
   );
 }

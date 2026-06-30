@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { formatSiteName } from '@/lib/utils';
+import { formatSiteName, preprocessMarkdown } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -599,7 +599,7 @@ export default function TrendsAnalysisPage() {
                   prose-headings:text-gray-900 prose-headings:font-semibold
                   prose-strong:text-gray-900
                   prose-ul:my-1 prose-li:my-0.5">
-                  <ReactMarkdown>{insights}</ReactMarkdown>
+                  <ReactMarkdown>{preprocessMarkdown(insights)}</ReactMarkdown>
                 </div>
               ) : null}
             </div>
